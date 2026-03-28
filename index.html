@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memory Road</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+
+    <!-- A領域：街のメイン画面 -->
+    <div class="area-a">
+
+      <!-- 流れる背景（★差し替えポイント：scroll-trackの中身を画像に変える） -->
+      <div class="scroll-bg">
+        <div class="scroll-track">
+          <div class="building b1"></div>
+          <div class="building b2"></div>
+          <div class="building b3"></div>
+          <div class="building b4"></div>
+          <div class="building b5"></div>
+          <div class="building b6"></div>
+          <div class="building b7"></div>
+          <div class="building b8"></div>
+          <div class="building b1"></div>
+          <div class="building b2"></div>
+          <div class="building b3"></div>
+          <div class="building b4"></div>
+          <div class="building b5"></div>
+          <div class="building b6"></div>
+          <div class="building b7"></div>
+          <div class="building b8"></div>
+        </div>
+      </div>
+
+      <!-- 地面 -->
+      <div class="ground"></div>
+
+      <!-- NPCの世界（背景と同じ速度で流れる） -->
+      <div class="npc-world" id="npc-world"></div>
+
+      <!-- 主人公（★差し替えポイント：中身を<img>に変える） -->
+      <div class="character">
+        <div class="char-head"></div>
+        <div class="char-body"></div>
+        <div class="char-legs">
+          <div class="leg leg-left"></div>
+          <div class="leg leg-right"></div>
+        </div>
+      </div>
+
+      <!-- BGM（★差し替えポイント：bgm.mp3を同じフォルダに置く） -->
+      <audio id="bgm" src="bgm.mp3" loop></audio>
+      <button class="bgm-btn" id="bgm-btn">
+        <span>♪</span>
+        <span id="bgm-label">OFF</span>
+      </button>
+
+    </div>
+
+    <!-- B領域：情報・操作エリア -->
+    <div class="area-b">
+
+      <!-- 通常時：案内 -->
+      <div class="b-guide" id="b-guide">
+        <p class="b-title">Memory Road</p>
+        <p class="b-desc">流れる街の吹き出しをタップすると、<br>誰かの映画の記憶が見えてきます。</p>
+        <button class="post-btn" id="open-form-btn">+ 記憶を投稿する</button>
+      </div>
+
+      <!-- 投稿詳細（吹き出しタップ時） -->
+      <div class="b-detail" id="b-detail">
+        <p class="detail-label">映画</p>
+        <p class="detail-movie" id="detail-movie"></p>
+        <p class="detail-label">感情</p>
+        <p class="detail-emotion" id="detail-emotion"></p>
+        <p class="detail-label">記憶</p>
+        <p class="detail-memory" id="detail-memory"></p>
+        <p class="detail-label">当時の年齢</p>
+        <p class="detail-age" id="detail-age"></p>
+        <p class="detail-label">投稿日時</p>
+        <p class="detail-date" id="detail-date"></p>
+        <div class="detail-actions">
+          <button class="b-back" id="b-back">← 戻る</button>
+          <button class="post-btn" id="open-form-btn-2">+ 記憶を投稿する</button>
+        </div>
+      </div>
+
+      <!-- 投稿フォーム（オーバーレイ） -->
+      <div class="form-overlay" id="form-overlay">
+        <div class="form-box">
+          <button class="form-close" id="close-form-btn">✕</button>
+          <p class="form-title">記憶を投稿する</p>
+
+          <div class="form-step" id="step-1">
+            <label class="form-label">映画タイトル</label>
+            <input class="form-input" id="input-movie" type="text" placeholder="例：君の名は。">
+            <button class="form-next" id="next-1">次へ →</button>
+          </div>
+
+          <div class="form-step hidden" id="step-2">
+            <label class="form-label">その映画を観て、どんな気持ちになりましたか？</label>
+            <div class="emotion-list">
+              <button class="emotion-btn e-orange" data-value="楽しかった">楽しかった</button>
+              <button class="emotion-btn e-orange" data-value="うれしかった">うれしかった</button>
+              <button class="emotion-btn e-blue"   data-value="悲しかった">悲しかった</button>
+              <button class="emotion-btn e-blue"   data-value="切なかった">切なかった</button>
+              <button class="emotion-btn e-red"    data-value="ワクワクした">ワクワクした</button>
+              <button class="emotion-btn e-red"    data-value="盛り上がった">盛り上がった</button>
+              <button class="emotion-btn e-green"  data-value="美しかった">美しかった</button>
+              <button class="emotion-btn e-green"  data-value="人の温かさを感じた">人の温かさを感じた</button>
+              <button class="emotion-btn e-purple" data-value="ドロドロしてた">ドロドロしてた</button>
+              <button class="emotion-btn e-purple" data-value="怖かった">怖かった</button>
+            </div>
+          </div>
+
+          <div class="form-step hidden" id="step-3">
+            <label class="form-label">当時の記憶を教えてください</label>
+            <textarea class="form-textarea" id="input-memory" placeholder="映画を観た日のこと、一緒にいた人、帰り道のこと…"></textarea>
+            <button class="form-next" id="next-3">次へ →</button>
+          </div>
+
+          <div class="form-step hidden" id="step-4">
+            <label class="form-label">観たとき、何年生でしたか？</label>
+            <div class="avatar-list">
+              <button class="avatar-btn" data-value="小学生">小学生</button>
+              <button class="avatar-btn" data-value="中学生">中学生</button>
+              <button class="avatar-btn" data-value="高校生">高校生</button>
+              <button class="avatar-btn" data-value="大学生">大学生</button>
+              <button class="avatar-btn" data-value="社会人">社会人</button>
+              <button class="avatar-btn" data-value="それ以外">それ以外</button>
+            </div>
+          </div>
+
+          <div class="form-step hidden" id="step-done">
+            <p class="form-done-msg">記憶を投稿しました。<br>あなたの記憶が、街を歩いています。</p>
+            <button class="form-next" id="done-btn">閉じる</button>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
