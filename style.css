@@ -34,6 +34,7 @@ html, body {
     height: 45vh !important;
     flex-shrink: 0;
     position: relative;
+    overflow-y: auto; /* 内容が多いときスクロールできる */
   }
 }
 
