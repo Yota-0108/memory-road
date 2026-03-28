@@ -6,9 +6,9 @@
 }
 
 html, body {
-  height: 100vh;
+  height: 100%;
   width: 100%;
-  overflow: hidden; /* 横スクロールを防ぐ */
+  overflow: hidden;
   font-family: 'Helvetica Neue', sans-serif;
 }
 
@@ -16,15 +16,24 @@ html, body {
 .container {
   display: flex;
   flex-direction: row;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
 }
 
 @media (max-width: 768px) {
   .container {
     flex-direction: column;
   }
-  .area-a { width: 100%; height: 60vh; }
-  .area-b { width: 100%; height: 40vh; }
+  .area-a {
+    width: 100%;
+    height: 60%;
+    flex-shrink: 0;
+  }
+  .area-b {
+    width: 100%;
+    height: 40%;
+    flex-shrink: 0;
+  }
 }
 
 /* ===== A領域 ===== */
