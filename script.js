@@ -1,3 +1,13 @@
+// ===== エスケープ処理 =====
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 // ===== BGMトグル =====
 const bgm      = document.getElementById('bgm');
 const bgmBtn   = document.getElementById('bgm-btn');
@@ -34,34 +44,6 @@ const emotionColorMap = {
   '怖かった':          'e-purple',
 };
 
-// ===== 仮の投稿データ =====
-const npcData = [
-  {
-    left: 250,
-    movie: '君の名は。',
-    emotion: '切なかった',
-    memory: '中学生の夏、友達と自転車で観に行った。\n帰り道に空が赤くて、なんか泣きそうだった。',
-    age: '中学生',
-    date: '2024年8月3日',
-  },
-  {
-    left: 500,
-    movie: 'ラ・ラ・ランド',
-    emotion: '美しかった',
-    memory: '就活帰りに一人でレイトショー。\n終わったあと、しばらく外に出られなかった。',
-    age: '大学生',
-    date: '2024年5月17日',
-  },
-  {
-    left: 720,
-    movie: '万引き家族',
-    emotion: '人の温かさを感じた',
-    memory: '雨の日に母と近所の映画館で観た。\nエンドロール中ずっと黙ってた。',
-    age: '高校生',
-    date: '2024年2月11日',
-  },
-];
-
 // ===== B領域の要素 =====
 const bGuide   = document.getElementById('b-guide');
 const bDetail  = document.getElementById('b-detail');
@@ -72,7 +54,10 @@ function showDetail(data) {
   document.getElementById('detail-emotion').textContent = data.emotion;
   document.getElementById('detail-memory').textContent  = data.memory;
   document.getElementById('detail-age').textContent     = data.age;
-  document.getElementById('detail-date').textContent    = data.date;
+  document.getElementById('detail-initial').textContent = data.initial || '';
+  document.getElementById('detail-date').textContent    = data.created_at
+    ? new Date(data.created_at).toLocaleDateString('ja-JP')
+    : '';
   bGuide.style.display = 'none';
   bDetail.classList.add('active');
 }
@@ -97,7 +82,7 @@ document.getElementById('open-form-btn-2').addEventListener('click', openForm);
 document.getElementById('close-form-btn').addEventListener('click', closeForm);
 
 function showStep(stepId) {
-  ['step-1','step-2','step-3','step-4','step-done'].forEach(function(id) {
+  ['step-1','step-2','step-3','step-4','step-5','step-done'].forEach(function(id) {
     document.getElementById(id).classList.add('hidden');
   });
   document.getElementById(stepId).classList.remove('hidden');
@@ -106,6 +91,8 @@ function showStep(stepId) {
 function resetForm() {
   document.getElementById('input-movie').value = '';
   document.getElementById('input-memory').value = '';
+  document.getElementById('input-initial-1').value = '';
+  document.getElementById('input-initial-2').value = '';
   document.querySelectorAll('.emotion-btn, .avatar-btn').forEach(function(btn) {
     btn.classList.remove('selected');
   });
@@ -125,17 +112,66 @@ document.querySelectorAll('.emotion-btn').forEach(function(btn) {
   });
 });
 
+const inputMemory = document.getElementById('input-memory');
+const charCount   = document.getElementById('char-count');
+
+inputMemory.addEventListener('input', function() {
+  const len = inputMemory.value.length;
+  charCount.textContent = len + ' / 50';
+  charCount.classList.toggle('limit', len >= 50);
+});
+
 document.getElementById('next-3').addEventListener('click', function() {
-  if (!document.getElementById('input-memory').value.trim()) return;
+  if (!inputMemory.value.trim()) return;
   showStep('step-4');
+});
+
+// ===== 投稿送信 =====
+let selectedEmotion = '';
+let selectedAge = '';
+
+document.querySelectorAll('.emotion-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    selectedEmotion = btn.dataset.value;
+  });
 });
 
 document.querySelectorAll('.avatar-btn').forEach(function(btn) {
   btn.addEventListener('click', function() {
     document.querySelectorAll('.avatar-btn').forEach(function(b) { b.classList.remove('selected'); });
     btn.classList.add('selected');
-    setTimeout(function() { showStep('step-done'); }, 200);
+    selectedAge = btn.dataset.value;
+    setTimeout(function() { showStep('step-5'); }, 200);
   });
+});
+
+document.getElementById('next-5').addEventListener('click', async function() {
+  const i1 = document.getElementById('input-initial-1').value.trim().toUpperCase();
+  const i2 = document.getElementById('input-initial-2').value.trim().toUpperCase();
+  if (!i1 || !i2) {
+    alert('イニシャルを入力してください');
+    return;
+  }
+  const initial = i1 + '・' + i2;
+  const movie  = document.getElementById('input-movie').value.trim();
+  const memory = inputMemory.value.trim();
+
+  try {
+    const res = await fetch('/api/posts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ movie, emotion: selectedEmotion, memory, age: selectedAge, initial }),
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      alert(result.error || '投稿に失敗しました');
+      return;
+    }
+    addNpc(result);
+    showStep('step-done');
+  } catch (e) {
+    alert('通信エラーが発生しました');
+  }
 });
 
 document.getElementById('done-btn').addEventListener('click', closeForm);
@@ -144,16 +180,17 @@ document.getElementById('done-btn').addEventListener('click', closeForm);
 const world = document.getElementById('npc-world');
 const loopWidth = 800;
 
-[0, loopWidth].forEach(function(offset) {
-  npcData.forEach(function(data) {
+function addNpc(data, offset) {
+  const left = Math.floor(Math.random() * loopWidth);
+  [0, loopWidth].forEach(function(o) {
     const npc = document.createElement('div');
     npc.className = 'npc';
-    npc.style.left = (data.left + offset) + 'px';
+    npc.style.left = (left + (offset !== undefined ? offset : o)) + 'px';
 
     const colorClass = emotionColorMap[data.emotion] || '';
     const bubble = document.createElement('div');
-    bubble.className   = 'speech-bubble ' + colorClass;
-    bubble.textContent = data.movie;
+    bubble.className = 'speech-bubble ' + colorClass;
+    bubble.innerHTML = escapeHtml(data.movie) + (data.initial ? '<span class="bubble-initial"> ' + escapeHtml(data.initial) + '</span>' : '');
     bubble.addEventListener('click', function() { showDetail(data); });
 
     const head = document.createElement('div');
@@ -174,5 +211,75 @@ const loopWidth = 800;
     npc.appendChild(body);
     npc.appendChild(legs);
     world.appendChild(npc);
+  });
+}
+
+// ===== 起動時にAPIから投稿を取得 =====
+async function loadPosts() {
+  try {
+    const res = await fetch('/api/posts');
+    const posts = await res.json();
+    posts.forEach(function(data) {
+      const left = Math.floor(Math.random() * loopWidth);
+      [0, loopWidth].forEach(function(offset) {
+        const npc = document.createElement('div');
+        npc.className = 'npc';
+        npc.style.left = (left + offset) + 'px';
+
+        const colorClass = emotionColorMap[data.emotion] || '';
+        const bubble = document.createElement('div');
+        bubble.className = 'speech-bubble ' + colorClass;
+        bubble.innerHTML = escapeHtml(data.movie) + (data.initial ? '<span class="bubble-initial"> ' + escapeHtml(data.initial) + '</span>' : '');
+        bubble.addEventListener('click', function() { showDetail(data); });
+
+        const head = document.createElement('div');
+        head.className = 'npc-head';
+        const body = document.createElement('div');
+        body.className = 'npc-body';
+        const legs = document.createElement('div');
+        legs.className = 'npc-legs';
+        const legL = document.createElement('div');
+        legL.className = 'npc-leg npc-leg-left';
+        const legR = document.createElement('div');
+        legR.className = 'npc-leg npc-leg-right';
+        legs.appendChild(legL);
+        legs.appendChild(legR);
+
+        npc.appendChild(bubble);
+        npc.appendChild(head);
+        npc.appendChild(body);
+        npc.appendChild(legs);
+        world.appendChild(npc);
+      });
+    });
+  } catch (e) {
+    console.error('投稿の取得に失敗しました', e);
+  }
+}
+
+loadPosts();
+
+// ===== フィルター =====
+let currentFilter = 'all';
+
+document.querySelectorAll('.filter-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+
+    // 新しく追加されるNPCにフィルターを適用（既存NPCはそのまま）
+    document.querySelectorAll('.npc').forEach(function(npc) {
+      const bubble = npc.querySelector('.speech-bubble');
+      if (!bubble) return;
+      if (currentFilter === 'all') {
+        npc.style.opacity = '1';
+        npc.style.pointerEvents = '';
+      } else {
+        const match = bubble.classList.contains(currentFilter);
+        npc.style.opacity = match ? '1' : '0.15';
+        npc.style.pointerEvents = match ? '' : 'none';
+      }
+    });
   });
 });

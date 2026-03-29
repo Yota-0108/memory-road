@@ -437,6 +437,17 @@ html, body {
 
 .form-textarea:focus { border-color: #7a5c3a; }
 
+.char-count {
+  font-size: 11px;
+  color: #b8975a;
+  text-align: right;
+  letter-spacing: 0.05em;
+}
+
+.char-count.limit {
+  color: #c93535;
+}
+
 .form-next {
   align-self: flex-end;
   background: #4a3020;
@@ -584,3 +595,78 @@ html, body {
   border-color: rgba(255, 255, 255, 0.35);
   color: #e0d8c8;
 }
+
+/* ===== イニシャル ===== */
+.bubble-initial {
+  font-size: 0.75em;
+  opacity: 0.7;
+}
+
+.initial-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.initial-input {
+  width: 60px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.initial-dot {
+  font-size: 1.2em;
+  color: #aab8c8;
+}
+
+/* ===== 注意書き ===== */
+.b-notice {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.b-notice p {
+  font-size: 10px;
+  color: #888;
+  letter-spacing: 0.03em;
+  line-height: 1.6;
+}
+
+/* ===== フィルターバー ===== */
+.filter-bar {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 10;
+}
+
+.filter-btn {
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(0,0,0,0.3);
+  color: rgba(255,255,255,0.5);
+  font-size: 11px;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: all 0.2s;
+}
+
+.filter-btn.active,
+.filter-btn:hover {
+  background: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.9);
+  border-color: rgba(255,255,255,0.4);
+}
+
+.filter-btn.f-orange.active { border-color: #e8935a; color: #e8935a; }
+.filter-btn.f-blue.active   { border-color: #7ab0d4; color: #7ab0d4; }
+.filter-btn.f-red.active    { border-color: #d47a7a; color: #d47a7a; }
+.filter-btn.f-green.active  { border-color: #7ab87a; color: #7ab87a; }
+.filter-btn.f-purple.active { border-color: #a87ab8; color: #a87ab8; }

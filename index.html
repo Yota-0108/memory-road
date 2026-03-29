@@ -12,6 +12,16 @@
     <!-- A領域：街のメイン画面 -->
     <div class="area-a">
 
+      <!-- フィルターボタン -->
+      <div class="filter-bar">
+        <button class="filter-btn active" data-filter="all">すべて</button>
+        <button class="filter-btn f-orange" data-filter="e-orange">楽しい</button>
+        <button class="filter-btn f-blue" data-filter="e-blue">切ない</button>
+        <button class="filter-btn f-red" data-filter="e-red">熱い</button>
+        <button class="filter-btn f-green" data-filter="e-green">美しい</button>
+        <button class="filter-btn f-purple" data-filter="e-purple">怖い</button>
+      </div>
+
       <!-- 流れる背景（★差し替えポイント：scroll-trackの中身を画像に変える） -->
       <div class="scroll-bg">
         <div class="scroll-track">
@@ -67,6 +77,10 @@
         <p class="b-title">Memory Road</p>
         <p class="b-desc">流れる街の吹き出しをタップすると、<br>誰かの映画の記憶が見えてきます。</p>
         <button class="post-btn" id="open-form-btn">+ 記憶を投稿する</button>
+        <div class="b-notice">
+          <p>特定の人物・作品への誹謗中傷はお控えください</p>
+          <p>個人を特定できる内容はお控えください</p>
+        </div>
       </div>
 
       <!-- 投稿詳細（吹き出しタップ時） -->
@@ -79,6 +93,8 @@
         <p class="detail-memory" id="detail-memory"></p>
         <p class="detail-label">当時の年齢</p>
         <p class="detail-age" id="detail-age"></p>
+        <p class="detail-label">投稿者</p>
+        <p class="detail-initial" id="detail-initial"></p>
         <p class="detail-label">投稿日時</p>
         <p class="detail-date" id="detail-date"></p>
         <div class="detail-actions">
@@ -95,7 +111,7 @@
 
           <div class="form-step" id="step-1">
             <label class="form-label">映画タイトル</label>
-            <input class="form-input" id="input-movie" type="text" placeholder="例：君の名は。">
+            <input class="form-input" id="input-movie" type="text" placeholder="例：君の名は。" maxlength="30">
             <button class="form-next" id="next-1">次へ →</button>
           </div>
 
@@ -117,7 +133,8 @@
 
           <div class="form-step hidden" id="step-3">
             <label class="form-label">当時の記憶を教えてください</label>
-            <textarea class="form-textarea" id="input-memory" placeholder="映画を観た日のこと、一緒にいた人、帰り道のこと…"></textarea>
+            <textarea class="form-textarea" id="input-memory" placeholder="映画を観た日のこと、一緒にいた人、帰り道のこと…" maxlength="50"></textarea>
+            <p class="char-count" id="char-count">0 / 50</p>
             <button class="form-next" id="next-3">次へ →</button>
           </div>
 
@@ -131,6 +148,16 @@
               <button class="avatar-btn" data-value="社会人">社会人</button>
               <button class="avatar-btn" data-value="それ以外">それ以外</button>
             </div>
+          </div>
+
+          <div class="form-step hidden" id="step-5">
+            <label class="form-label">あなたのイニシャルを教えてください</label>
+            <div class="initial-inputs">
+              <input class="form-input initial-input" id="input-initial-1" type="text" placeholder="A" maxlength="1">
+              <span class="initial-dot">・</span>
+              <input class="form-input initial-input" id="input-initial-2" type="text" placeholder="A" maxlength="1">
+            </div>
+            <button class="form-next" id="next-5">投稿する</button>
           </div>
 
           <div class="form-step hidden" id="step-done">
