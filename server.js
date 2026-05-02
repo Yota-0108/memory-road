@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const { createClient } = require('@supabase/supabase-js');
 
 // ブロックリスト
@@ -22,17 +24,21 @@ function isSuspicious(text) {
   return suspiciousPatterns.some(pattern => pattern.test(text));
 }
 
-// IPごとの投稿履歴（1分以内に3件以上で弾く）
-const postLog = {};
+const postLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 3,
+  message: { error: '投稿が多すぎます。少し待ってから再度お試しください' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
-function isRateLimited(ip) {
-  const now = Date.now();
-  if (!postLog[ip]) postLog[ip] = [];
-  postLog[ip] = postLog[ip].filter(t => now - t < 60000);
-  if (postLog[ip].length >= 3) return true;
-  postLog[ip].push(now);
-  return false;
-}
+const getLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  message: { error: 'リクエストが多すぎます。少し待ってから再度お試しください' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // 許可された選択肢（フォームの選択肢と完全一致のみ受付）
 const allowedEmotions = new Set([
@@ -73,6 +79,8 @@ const ALLOWED_ORIGINS = [
 const app = express();
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
+app.set('trust proxy', 1);
+app.use(helmet());
 app.use(cors({
   origin: function(origin, callback) {
     if (ALLOWED_ORIGINS.includes(origin)) {
@@ -85,7 +93,7 @@ app.use(cors({
 app.use(express.json({ limit: '10kb' }));
 
 // 投稿一覧を取得
-app.get('/api/posts', async (req, res) => {
+app.get('/api/posts', getLimiter, async (req, res) => {
   const { data, error } = await supabase
     .from('posts')
     .select('*')
@@ -99,20 +107,13 @@ app.get('/api/posts', async (req, res) => {
 });
 
 // 投稿を保存
-app.post('/api/posts', async (req, res) => {
+app.post('/api/posts', postLimiter, async (req, res) => {
   const { movie, emotion, memory, age, initial } = req.body;
 
-  const forwarded = req.headers['x-forwarded-for'];
-  const ip = forwarded
-    ? forwarded.split(',').map(s => s.trim()).pop()
-    : req.socket.remoteAddress;
+  const ip = req.ip;
 
   if (blockedIPs.has(ip)) {
     return res.status(403).json({ error: '投稿できません' });
-  }
-
-  if (isRateLimited(ip)) {
-    return res.status(429).json({ error: '投稿が多すぎます。少し待ってから再度お試しください' });
   }
 
   if (!movie || !emotion || !memory || !age || !initial) {
