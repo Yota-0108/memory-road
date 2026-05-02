@@ -73,7 +73,6 @@ function isValidText(text) {
 
 const ALLOWED_ORIGINS = [
   'https://d17ucnlgw15ddm.cloudfront.net',
-  'https://memory-road-app.s3.ap-northeast-3.amazonaws.com',
 ];
 
 const app = express();
