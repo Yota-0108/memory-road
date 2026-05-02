@@ -66,8 +66,7 @@ function isValidText(text) {
 }
 
 const ALLOWED_ORIGINS = [
-  'https://your-distribution.cloudfront.net', // CloudFrontのURLに変更してください
-  // 'https://your-custom-domain.com',         // カスタムドメインがあれば追加
+  'https://d17ucnlgw15ddm.cloudfront.net',
 ];
 
 const app = express();

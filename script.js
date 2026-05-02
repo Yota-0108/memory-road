@@ -1,4 +1,4 @@
-const API_BASE = 'https://your-app.onrender.com'; // RenderのURLに変更してください
+const API_BASE = 'https://memory-road.onrender.com';
 
 // ===== エスケープ処理 =====
 function escapeHtml(text) {
