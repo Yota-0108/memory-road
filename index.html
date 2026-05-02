@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Memory Road</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=3">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="container">
@@ -33,6 +34,10 @@
           <div class="building b6"></div>
           <div class="building b7"></div>
           <div class="building b8"></div>
+          <div class="building b9"></div>
+          <div class="building b10"></div>
+          <div class="building b11"></div>
+          <div class="building b12"></div>
           <div class="building b1"></div>
           <div class="building b2"></div>
           <div class="building b3"></div>
@@ -41,6 +46,10 @@
           <div class="building b6"></div>
           <div class="building b7"></div>
           <div class="building b8"></div>
+          <div class="building b9"></div>
+          <div class="building b10"></div>
+          <div class="building b11"></div>
+          <div class="building b12"></div>
         </div>
       </div>
 
@@ -111,7 +120,9 @@
 
           <div class="form-step" id="step-1">
             <label class="form-label">映画タイトル</label>
-            <input class="form-input" id="input-movie" type="text" placeholder="例：君の名は。" maxlength="30">
+            <input class="form-input" id="input-movie" type="text" placeholder="例：君の名は。" maxlength="30" list="movie-suggestions">
+            <datalist id="movie-suggestions"></datalist>
+            <p class="form-hint">候補がない場合はタイトルを入力して次へを押してください</p>
             <button class="form-next" id="next-1">次へ →</button>
           </div>
 

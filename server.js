@@ -34,6 +34,17 @@ function isRateLimited(ip) {
   return false;
 }
 
+// 許可された選択肢（フォームの選択肢と完全一致のみ受付）
+const allowedEmotions = new Set([
+  '楽しかった', 'うれしかった', '悲しかった', '切なかった',
+  'ワクワクした', '盛り上がった', '美しかった', '人の温かさを感じた',
+  'ドロドロしてた', '怖かった',
+]);
+
+const allowedAges = new Set([
+  '小学生', '中学生', '高校生', '大学生', '社会人', 'それ以外',
+]);
+
 // 禁止ワードリスト（追加する場合はここに足す）
 const bannedWords = [
   // 差別
@@ -51,15 +62,27 @@ function containsBannedWord(text) {
 
 // 日本語・英語・数字・一般的な記号のみ許可
 function isValidText(text) {
-  return /^[\u0000-\u007F\u3000-\u9FFF\uF900-\uFAFF\uFF00-\uFFEF]+$/.test(text);
+  return /^[\u0000-\u007F\u2160-\u2188\u3000-\u9FFF\uF900-\uFAFF\uFF00-\uFFEF]+$/.test(text);
 }
+
+const ALLOWED_ORIGINS = [
+  'https://your-distribution.cloudfront.net', // CloudFrontのURLに変更してください
+  // 'https://your-custom-domain.com',         // カスタムドメインがあれば追加
+];
 
 const app = express();
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-app.use(cors());
+app.use(cors({
+  origin: function(origin, callback) {
+    if (ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS policy violation'));
+    }
+  },
+}));
 app.use(express.json());
-app.use(express.static('.'));
 
 // 投稿一覧を取得
 app.get('/api/posts', async (req, res) => {
@@ -91,6 +114,12 @@ app.post('/api/posts', async (req, res) => {
   }
   if (movie.length > 30 || memory.length > 50) {
     return res.status(400).json({ error: '文字数オーバーです' });
+  }
+  if (!allowedEmotions.has(emotion)) {
+    return res.status(400).json({ error: '無効な感情が選択されています' });
+  }
+  if (!allowedAges.has(age)) {
+    return res.status(400).json({ error: '無効な年齢が選択されています' });
   }
   if (!/^[A-Za-z]・[A-Za-z]$/.test(initial)) {
     return res.status(400).json({ error: 'イニシャルはA・Bの形式で入力してください' });

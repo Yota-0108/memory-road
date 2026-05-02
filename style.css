@@ -34,7 +34,25 @@ html, body {
     height: 45vh !important;
     flex-shrink: 0;
     position: relative;
-    overflow-y: auto; /* 内容が多いときスクロールできる */
+    padding: 28px 20px 20px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+  .area-b::before {
+    display: none;
+  }
+  .b-detail {
+    max-width: 100%;
+    border-left: none;
+    padding-left: 0;
+    align-self: flex-start;
+  }
+  .detail-movie {
+    font-size: 16px;
+    word-break: break-all;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -61,7 +79,7 @@ html, body {
   display: flex;
   align-items: flex-end;
   height: 100%;
-  animation: scroll-left 20s linear infinite;
+  animation: scroll-left 15s linear infinite;
 }
 
 @keyframes scroll-left {
@@ -87,14 +105,18 @@ html, body {
   background-size: 14px 16px;
 }
 
-.b1 { width: 70px;  height: 58%; }
-.b2 { width: 45px;  height: 75%; }
-.b3 { width: 90px;  height: 45%; background-color: #111f30; }
-.b4 { width: 55px;  height: 65%; }
-.b5 { width: 80px;  height: 52%; background-color: #0a1628; }
-.b6 { width: 40px;  height: 80%; }
-.b7 { width: 100px; height: 40%; background-color: #111f30; }
-.b8 { width: 60px;  height: 68%; }
+.b1  { width: 70px;  height: 58%; }
+.b2  { width: 45px;  height: 75%; }
+.b3  { width: 90px;  height: 45%; background-color: #111f30; }
+.b4  { width: 55px;  height: 65%; }
+.b5  { width: 80px;  height: 52%; background-color: #0a1628; }
+.b6  { width: 40px;  height: 80%; }
+.b7  { width: 100px; height: 40%; background-color: #111f30; }
+.b8  { width: 60px;  height: 68%; }
+.b9  { width: 50px;  height: 72%; background-color: #0d1520; }
+.b10 { width: 85px;  height: 48%; }
+.b11 { width: 35px;  height: 85%; background-color: #0a1628; }
+.b12 { width: 75px;  height: 55%; background-color: #111f30; }
 
 .ground {
   position: absolute;
@@ -111,9 +133,8 @@ html, body {
   position: absolute;
   top: 0;
   left: 0;
-  width: 1600px;
+  width: 100%;
   height: 100%;
-  animation: scroll-left 20s linear infinite;
   pointer-events: none;
   z-index: 3;
 }
@@ -254,6 +275,20 @@ html, body {
   position: relative; /* オーバーレイの基準 */
 }
 
+/* 内側の丸み枠 */
+.area-b::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  right: 6px;
+  bottom: 6px;
+  border: 4px solid #6b3a2a;
+  border-radius: 12px;
+  pointer-events: none;
+  z-index: 0;
+}
+
 /* 通常時 */
 .b-guide {
   text-align: center;
@@ -261,12 +296,15 @@ html, body {
   flex-direction: column;
   align-items: center;
   gap: 20px;
+  position: relative;
+  z-index: 1;
 }
 
 .b-title {
-  font-size: 22px;
-  font-weight: bold;
-  letter-spacing: 0.15em;
+  font-family: 'DM Serif Display', serif;
+  font-size: 42px;
+  font-weight: 400;
+  letter-spacing: 0.05em;
   color: #2a2a3c;
 }
 
@@ -298,6 +336,8 @@ html, body {
   gap: 10px;
   width: 100%;
   max-width: 320px;
+  position: relative;
+  z-index: 1;
 }
 
 .b-detail.active { display: flex; }
@@ -313,12 +353,20 @@ html, body {
   font-size: 20px;
   font-weight: bold;
   color: #3d2b1f;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .detail-emotion {
   font-size: 13px;
-  color: #7a8fa6;
+  color: #4a6a8a;
 }
+
+.detail-emotion.e-orange { color: #e07a30; }
+.detail-emotion.e-blue   { color: #4a7fc1; }
+.detail-emotion.e-red    { color: #c93535; }
+.detail-emotion.e-green  { color: #3a9a5c; }
+.detail-emotion.e-purple { color: #7a45b0; }
 
 .detail-memory {
   font-size: 13px;
@@ -330,7 +378,7 @@ html, body {
 .detail-age,
 .detail-date {
   font-size: 12px;
-  color: #999;
+  color: #666;
 }
 
 .detail-actions {
@@ -436,6 +484,13 @@ html, body {
 }
 
 .form-textarea:focus { border-color: #7a5c3a; }
+
+.form-hint {
+  font-size: 10px;
+  color: #b8975a;
+  letter-spacing: 0.03em;
+  line-height: 1.6;
+}
 
 .char-count {
   font-size: 11px;

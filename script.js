@@ -1,3 +1,5 @@
+const API_BASE = 'https://your-app.onrender.com'; // RenderのURLに変更してください
+
 // ===== エスケープ処理 =====
 function escapeHtml(text) {
   return text
@@ -51,7 +53,9 @@ const fOverlay = document.getElementById('form-overlay');
 
 function showDetail(data) {
   document.getElementById('detail-movie').textContent   = data.movie;
-  document.getElementById('detail-emotion').textContent = data.emotion;
+  const emotionEl = document.getElementById('detail-emotion');
+  emotionEl.textContent = data.emotion;
+  emotionEl.className = 'detail-emotion ' + (emotionColorMap[data.emotion] || '');
   document.getElementById('detail-memory').textContent  = data.memory;
   document.getElementById('detail-age').textContent     = data.age;
   document.getElementById('detail-initial').textContent = data.initial || '';
@@ -157,7 +161,7 @@ document.getElementById('next-5').addEventListener('click', async function() {
   const memory = inputMemory.value.trim();
 
   try {
-    const res = await fetch('/api/posts', {
+    const res = await fetch(API_BASE + '/api/posts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ movie, emotion: selectedEmotion, memory, age: selectedAge, initial }),
@@ -176,82 +180,204 @@ document.getElementById('next-5').addEventListener('click', async function() {
 
 document.getElementById('done-btn').addEventListener('click', closeForm);
 
-// ===== NPC生成 =====
+// ===== NPC生成（JSアニメーション・3体リサイクル） =====
 const world = document.getElementById('npc-world');
-const loopWidth = 800;
 
-function addNpc(data, offset) {
-  const left = Math.floor(Math.random() * loopWidth);
-  [0, loopWidth].forEach(function(o) {
-    const npc = document.createElement('div');
-    npc.className = 'npc';
-    npc.style.left = (left + (offset !== undefined ? offset : o)) + 'px';
+let allPosts      = [];
+let nextPostIndex = 0;
+let activeNpcs    = []; // { el, pos, postId }
 
-    const colorClass = emotionColorMap[data.emotion] || '';
-    const bubble = document.createElement('div');
-    bubble.className = 'speech-bubble ' + colorClass;
-    bubble.innerHTML = escapeHtml(data.movie) + (data.initial ? '<span class="bubble-initial"> ' + escapeHtml(data.initial) + '</span>' : '');
-    bubble.addEventListener('click', function() { showDetail(data); });
+function getNextPost() {
+  if (allPosts.length === 0) return null;
+  const shownIds = new Set(activeNpcs.map(function(n) { return n.postId; }));
+  for (let i = 0; i < allPosts.length; i++) {
+    const candidate = allPosts[nextPostIndex % allPosts.length];
+    nextPostIndex++;
+    if (!shownIds.has(candidate.id)) return candidate;
+  }
+  // 全投稿が表示中（投稿数 <= MAX_NPCS）の場合はそのまま返す
+  const fallback = allPosts[nextPostIndex % allPosts.length];
+  nextPostIndex++;
+  return fallback;
+}
+let scrollOffset  = 0;
+let lastTimestamp = null;
+const SCROLL_SPEED = 52; // px/sec
+const MAX_NPCS     = 3;
+let currentFilter  = 'all';
 
-    const head = document.createElement('div');
-    head.className = 'npc-head';
-    const body = document.createElement('div');
-    body.className = 'npc-body';
-    const legs = document.createElement('div');
-    legs.className = 'npc-legs';
-    const legL = document.createElement('div');
-    legL.className = 'npc-leg npc-leg-left';
-    const legR = document.createElement('div');
-    legR.className = 'npc-leg npc-leg-right';
-    legs.appendChild(legL);
-    legs.appendChild(legR);
-
-    npc.appendChild(bubble);
-    npc.appendChild(head);
-    npc.appendChild(body);
-    npc.appendChild(legs);
-    world.appendChild(npc);
-  });
+function getAreaWidth() {
+  return document.querySelector('.area-a').clientWidth;
 }
 
+function applyFilterToNpc(npcObj) {
+  if (currentFilter === 'all') {
+    npcObj.el.style.opacity = '1';
+    npcObj.el.style.pointerEvents = '';
+  } else {
+    const match = npcObj.el._bubble.classList.contains(currentFilter);
+    npcObj.el.style.opacity = match ? '1' : '0.15';
+    npcObj.el.style.pointerEvents = match ? '' : 'none';
+  }
+}
+
+function buildNpcEl(data) {
+  const npc = document.createElement('div');
+  npc.className = 'npc';
+
+  const colorClass = emotionColorMap[data.emotion] || '';
+  const bubble = document.createElement('div');
+  bubble.className = 'speech-bubble ' + colorClass;
+  bubble.innerHTML = escapeHtml(data.movie) +
+    (data.initial ? '<span class="bubble-initial"> ' + escapeHtml(data.initial) + '</span>' : '');
+  bubble.onclick = function() { showDetail(data); };
+  npc._bubble = bubble;
+
+  const head = document.createElement('div');
+  head.className = 'npc-head';
+  const body = document.createElement('div');
+  body.className = 'npc-body';
+  const legs = document.createElement('div');
+  legs.className = 'npc-legs';
+  const legL = document.createElement('div');
+  legL.className = 'npc-leg npc-leg-left';
+  const legR = document.createElement('div');
+  legR.className = 'npc-leg npc-leg-right';
+  legs.appendChild(legL);
+  legs.appendChild(legR);
+
+  npc.appendChild(bubble);
+  npc.appendChild(head);
+  npc.appendChild(body);
+  npc.appendChild(legs);
+  return npc;
+}
+
+function refreshNpcContent(npcObj, data) {
+  const colorClass = emotionColorMap[data.emotion] || '';
+  npcObj.el._bubble.className = 'speech-bubble ' + colorClass;
+  npcObj.el._bubble.innerHTML = escapeHtml(data.movie) +
+    (data.initial ? '<span class="bubble-initial"> ' + escapeHtml(data.initial) + '</span>' : '');
+  npcObj.el._bubble.onclick = function() { showDetail(data); };
+  applyFilterToNpc(npcObj);
+}
+
+function initNpcs() {
+  if (allPosts.length === 0) return;
+  const count     = Math.min(MAX_NPCS, allPosts.length);
+  const areaWidth = getAreaWidth();
+  const spacing   = areaWidth / (count + 1);
+
+  for (let i = 0; i < count; i++) {
+    const data = getNextPost();
+    if (!data) break;
+    const el     = buildNpcEl(data);
+    const pos    = scrollOffset + areaWidth + spacing * (i + 1);
+    el.style.left = (pos - scrollOffset) + 'px';
+    world.appendChild(el);
+    const npcObj = { el, pos, postId: data.id };
+    activeNpcs.push(npcObj);
+    applyFilterToNpc(npcObj);
+  }
+
+  requestAnimationFrame(animateNpcs);
+}
+
+function animateNpcs(timestamp) {
+  if (!lastTimestamp) lastTimestamp = timestamp;
+  const delta = (timestamp - lastTimestamp) / 1000;
+  lastTimestamp = timestamp;
+
+  scrollOffset += SCROLL_SPEED * delta;
+  const areaWidth = getAreaWidth();
+  const spacing   = areaWidth / MAX_NPCS;
+
+  activeNpcs.forEach(function(npcObj) {
+    const visualLeft = npcObj.pos - scrollOffset;
+
+    if (visualLeft < -150) {
+      const maxPos = Math.max.apply(null, activeNpcs.map(function(n) { return n.pos; }));
+      const minPos = scrollOffset + areaWidth + 50;
+      npcObj.pos   = Math.max(maxPos + spacing, minPos);
+      const data   = getNextPost();
+      if (data) {
+        npcObj.postId = data.id;
+        refreshNpcContent(npcObj, data);
+      }
+    }
+
+    npcObj.el.style.left = (npcObj.pos - scrollOffset) + 'px';
+  });
+
+  requestAnimationFrame(animateNpcs);
+}
+
+function addNpc(data) {
+  allPosts.push(data);
+  updateMovieSuggestions();
+  if (activeNpcs.length < MAX_NPCS) {
+    const areaWidth = getAreaWidth();
+    const el        = buildNpcEl(data);
+    const pos       = scrollOffset + areaWidth * 1.05;
+    el.style.left   = (pos - scrollOffset) + 'px';
+    world.appendChild(el);
+    const npcObj = { el, pos, postId: data.id };
+    activeNpcs.push(npcObj);
+    applyFilterToNpc(npcObj);
+  }
+}
+
+// ===== 映画タイトル候補を更新 =====
+const movieTitles = [];
+
+function updateMovieSuggestions() {
+  const titles = [...new Set(allPosts.map(function(p) { return p.movie; }))];
+  movieTitles.length = 0;
+  titles.forEach(function(t) { movieTitles.push(t); });
+}
+
+function renderSuggestions(query) {
+  const datalist = document.getElementById('movie-suggestions');
+  if (!query) {
+    datalist.innerHTML = '';
+    return;
+  }
+  datalist.innerHTML = movieTitles.map(function(t) {
+    return '<option value="' + escapeHtml(t) + '">';
+  }).join('');
+}
+
+let isComposing = false;
+const movieInput = document.getElementById('input-movie');
+
+movieInput.addEventListener('compositionstart', function() {
+  isComposing = true;
+});
+
+movieInput.addEventListener('compositionend', function() {
+  isComposing = false;
+  renderSuggestions(this.value);
+});
+
+movieInput.addEventListener('input', function() {
+  if (!isComposing) renderSuggestions(this.value);
+});
+
 // ===== 起動時にAPIから投稿を取得 =====
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
 async function loadPosts() {
   try {
-    const res = await fetch('/api/posts');
-    const posts = await res.json();
-    posts.forEach(function(data) {
-      const left = Math.floor(Math.random() * loopWidth);
-      [0, loopWidth].forEach(function(offset) {
-        const npc = document.createElement('div');
-        npc.className = 'npc';
-        npc.style.left = (left + offset) + 'px';
-
-        const colorClass = emotionColorMap[data.emotion] || '';
-        const bubble = document.createElement('div');
-        bubble.className = 'speech-bubble ' + colorClass;
-        bubble.innerHTML = escapeHtml(data.movie) + (data.initial ? '<span class="bubble-initial"> ' + escapeHtml(data.initial) + '</span>' : '');
-        bubble.addEventListener('click', function() { showDetail(data); });
-
-        const head = document.createElement('div');
-        head.className = 'npc-head';
-        const body = document.createElement('div');
-        body.className = 'npc-body';
-        const legs = document.createElement('div');
-        legs.className = 'npc-legs';
-        const legL = document.createElement('div');
-        legL.className = 'npc-leg npc-leg-left';
-        const legR = document.createElement('div');
-        legR.className = 'npc-leg npc-leg-right';
-        legs.appendChild(legL);
-        legs.appendChild(legR);
-
-        npc.appendChild(bubble);
-        npc.appendChild(head);
-        npc.appendChild(body);
-        npc.appendChild(legs);
-        world.appendChild(npc);
-      });
-    });
+    const res = await fetch(API_BASE + '/api/posts');
+    allPosts = await res.json();
+    shuffleArray(allPosts);
+    updateMovieSuggestions();
+    initNpcs();
   } catch (e) {
     console.error('投稿の取得に失敗しました', e);
   }
@@ -260,26 +386,11 @@ async function loadPosts() {
 loadPosts();
 
 // ===== フィルター =====
-let currentFilter = 'all';
-
 document.querySelectorAll('.filter-btn').forEach(function(btn) {
   btn.addEventListener('click', function() {
     document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
     btn.classList.add('active');
     currentFilter = btn.dataset.filter;
-
-    // 新しく追加されるNPCにフィルターを適用（既存NPCはそのまま）
-    document.querySelectorAll('.npc').forEach(function(npc) {
-      const bubble = npc.querySelector('.speech-bubble');
-      if (!bubble) return;
-      if (currentFilter === 'all') {
-        npc.style.opacity = '1';
-        npc.style.pointerEvents = '';
-      } else {
-        const match = bubble.classList.contains(currentFilter);
-        npc.style.opacity = match ? '1' : '0.15';
-        npc.style.pointerEvents = match ? '' : 'none';
-      }
-    });
+    activeNpcs.forEach(function(npcObj) { applyFilterToNpc(npcObj); });
   });
 });
