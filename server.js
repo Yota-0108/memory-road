@@ -82,7 +82,7 @@ app.use(cors({
     }
   },
 }));
-app.use(express.json());
+app.use(express.json({ limit: '10kb' }));
 
 // 投稿一覧を取得
 app.get('/api/posts', async (req, res) => {
@@ -91,7 +91,10 @@ app.get('/api/posts', async (req, res) => {
     .select('*')
     .order('created_at', { ascending: false });
 
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) {
+    console.error('Supabase error:', error);
+    return res.status(500).json({ error: '投稿の取得中にエラーが発生しました' });
+  }
   res.json(data);
 });
 
@@ -99,7 +102,10 @@ app.get('/api/posts', async (req, res) => {
 app.post('/api/posts', async (req, res) => {
   const { movie, emotion, memory, age, initial } = req.body;
 
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const forwarded = req.headers['x-forwarded-for'];
+  const ip = forwarded
+    ? forwarded.split(',').map(s => s.trim()).pop()
+    : req.socket.remoteAddress;
 
   if (blockedIPs.has(ip)) {
     return res.status(403).json({ error: '投稿できません' });
@@ -143,7 +149,10 @@ app.post('/api/posts', async (req, res) => {
     .select()
     .single();
 
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) {
+    console.error('Supabase error:', error);
+    return res.status(500).json({ error: '投稿の保存中にエラーが発生しました' });
+  }
   res.json(data);
 });
 
